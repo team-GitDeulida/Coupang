@@ -1,0 +1,7 @@
+# pip install -r requirements.txt
+requests
+python-dotenv
+# beautifulsoup4
+# selenium
+# httpx
+# httpx[http2]
