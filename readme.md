@@ -22,7 +22,7 @@ pip install -r requirements.txt
 # Swagger Test
 ```bash
 # 코드 실행
-python 3.\ flask_coupang_api.py
+python 0.\ flask_coupang_api.py
 
 # http://127.0.0.1:5000/apidocs/ 접속
 ```
