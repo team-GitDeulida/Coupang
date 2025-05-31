@@ -91,6 +91,56 @@ def create_deeplink():
     else:
         return jsonify({"error": result.get("rMessage", "API Error")}), 400
     
+@app.route('/best-products', methods=['GET'])
+def best_products():
+    """
+    쿠팡 베스트 카테고리 상품 조회 API
+    ---
+    parameters:
+      - name: categoryId
+        in: query
+        type: string
+        required: true
+        description: "카테고리 ID (예: 1012)"
+      - name: limit
+        in: query
+        type: integer
+        required: false
+        description: "조회 개수(기본: 10, 최대: 100)"
+    responses:
+      200:
+        description: 카테고리별 베스트 상품 리스트
+    """
+    category_id = request.args.get("categoryId")
+    limit = request.args.get("limit", 10)
+    if not category_id:
+        return jsonify({"error": "categoryId 쿼리 파라미터를 입력하세요."}), 400
+
+    url_path = f"/v2/providers/affiliate_open_api/apis/openapi/v1/products/bestcategories/{category_id}?limit={limit}"
+    url = f"{DOMAIN}{url_path}"
+    headers = {
+        "Authorization": generateHmac("GET", url_path, SECRET_KEY, ACCESS_KEY),
+        "Content-Type": "application/json"
+    }
+    response = requests.get(url, headers=headers)
+    result = response.json()
+    if "data" in result:
+        products = [
+            {
+                "productName": item.get("productName"),
+                "productPrice": item.get("productPrice"),
+                "categoryName": item.get("categoryName"),
+                "isRocket": item.get("isRocket"),
+                "isFreeShipping": item.get("isFreeShipping"),
+                "productUrl": item.get("productUrl"),
+                "productImage": item.get("productImage"),
+            }
+            for item in result["data"]
+        ]
+        return jsonify({"result": products})
+    else:
+        return jsonify(result), 400
+
 
 # ★ Swagger UI 하단 Powered by 문구/로고 숨기기 ★
 # @app.after_request
