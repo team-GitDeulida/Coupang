@@ -102,11 +102,33 @@ def crawl_product_title(detail_url: str) -> str:
         return f"❌ 크롤링 실패: {e}"
 
 def extract_product_id(url: str) -> str:
+    """
+    주어진 쿠팡 상품 URL에서 productId(상품 ID)만 추출해서 반환하는 함수.
+    예: https://www.coupang.com/vp/products/123456789?itemId=xxx
+        -> "123456789" 반환
+
+    Args:
+        url (str): 상품 상세 페이지 URL
+
+    Returns:
+        str: 추출한 productId 문자열
+    """
     parsed_url = urlparse(url)
     return parsed_url.path.split("/products/")[1].split("?")[0]
 
-
 def match_product_by_id(product_id: str, keyword: str, limit: int = 10):
+    """
+    쿠팡 키워드 검색 API를 이용해 해당 키워드로 상품을 조회하고,
+    결과 중에서 product_id와 일치하는 상품 정보를 반환하는 함수.
+
+    Args:
+        product_id (str): 찾으려는 상품의 productId
+        keyword (str): 검색할 키워드 (예: "제로콜라")
+        limit (int, optional): 최대 검색 결과 수. 기본값은 10.
+
+    Returns:
+        dict or None: 일치하는 상품 정보 딕셔너리, 없으면 None 반환
+    """
     result = search_products_by_keyword(keyword, limit=limit)
     products = result.get("data", {}).get("productData", [])
 
