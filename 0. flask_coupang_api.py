@@ -9,6 +9,7 @@ import json
 from time import gmtime, strftime
 import os
 from dotenv import load_dotenv
+from urllib.parse import quote_plus
 
 load_dotenv()
 
@@ -90,6 +91,72 @@ def create_deeplink():
         return jsonify({"result": links})
     else:
         return jsonify({"error": result.get("rMessage", "API Error")}), 400
+    
+@app.route('/search-products', methods=['GET'])
+def search_products():
+    """
+    쿠팡 키워드 검색 API
+    ---
+    parameters:
+      - name: keyword
+        in: query
+        type: string
+        required: true
+        description: "검색 키워드 (예: '코멧 니트릴장갑')"
+      - name: limit
+        in: query
+        type: integer
+        required: false
+        description: "조회 개수(기본: 1, 최대: 10)"
+    responses:
+      200:
+        description: 키워드로 검색된 상품 리스트
+    """
+    keyword = request.args.get("keyword")
+    limit = request.args.get("limit", 1)
+    try:
+        limit = int(limit)
+    except ValueError:
+        return jsonify({"error": "limit 파라미터는 정수여야 합니다."}), 400
+
+    if not keyword:
+        return jsonify({"error": "keyword 쿼리 파라미터를 입력하세요."}), 400
+
+    encoded_keyword = quote_plus(keyword)
+    url_path = f"/v2/providers/affiliate_open_api/apis/openapi/v1/products/search?keyword={encoded_keyword}&limit={limit}"
+    url = f"{DOMAIN}{url_path}"
+    
+    headers = {
+        "Authorization": generateHmac("GET", url_path, SECRET_KEY, ACCESS_KEY),
+        "Content-Type": "application/json"
+    }
+
+    response = requests.get(url, headers=headers)
+    result = response.json()
+
+    # 쿠팡 API 성공 코드 체크
+    if result.get("rCode") == "0" and "data" in result and isinstance(result["data"], list):
+        products = [
+            {
+                "productName": item.get("productName"),
+                "productPrice": item.get("productPrice"),
+                "isRocket": item.get("isRocket"),
+                "isFreeShipping": item.get("isFreeShipping"),
+                "categoryName": item.get("categoryName"),
+                "productId": item.get("productId"),
+                "productUrl": item.get("productUrl"),
+                "productImage": item.get("productImage"),
+                "rank": item.get("rank"),
+                "keyword": item.get("keyword"),
+            }
+            for item in result["data"] if isinstance(item, dict)
+        ]
+        return jsonify({"result": products})
+    else:
+        return jsonify({
+            "error": result.get("rMessage", "API Error"),
+            "raw": result
+        }), 400
     
 @app.route('/best-products', methods=['GET'])
 def best_products():
